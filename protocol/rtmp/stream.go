@@ -379,7 +379,7 @@ func (s *Stream) CheckAlive() (n int) {
 		v := val.(*PackWriterCloser)
 		if v.w != nil {
 			//Alive from RWBaser, check last frame now - timestamp, if > timeout then Remove it
-			if !v.w.Alive() && s.isStart {
+			if !v.w.Alive() {
 				log.Infof("write timeout remove")
 				s.ws.Delete(key)
 				v.w.Close(fmt.Errorf("write timeout"))
@@ -402,8 +402,8 @@ func (s *Stream) closeInter() {
 	s.ws.Range(func(key, val interface{}) bool {
 		v := val.(*PackWriterCloser)
 		if v.w != nil {
+			v.w.Close(fmt.Errorf("closed"))
 			if v.w.Info().IsInterval() {
-				v.w.Close(fmt.Errorf("closed"))
 				s.ws.Delete(key)
 				log.Debugf("[%v] player closed and remove\n", v.w.Info())
 			}
