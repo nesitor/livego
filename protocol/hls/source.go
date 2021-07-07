@@ -172,6 +172,7 @@ func (source *Source) Info() (ret av.Info) {
 }
 
 func (source *Source) cleanup() {
+	_ = source.tsCache.SaveCompleteM3U8PlayList(source.info.UID)
 	close(source.packetQueue)
 	source.bwriter = nil
 	source.btswriter = nil
@@ -195,9 +196,14 @@ func (source *Source) cut() {
 		source.flushAudio()
 
 		source.seq++
-		filename := fmt.Sprintf("/%s/%d.ts", source.info.Key, time.Now().Unix())
+		now := fmt.Sprintf("%d", time.Now().Unix())
+		filename := fmt.Sprintf("/%s/%s.ts", source.info.Key, now)
 		item := NewTSItem(filename, int(source.stat.durationMs()), source.seq, source.btswriter.Bytes())
 		source.tsCache.SetItem(filename, item)
+		err := source.tsCache.SaveItem(source.info.UID, now, item)
+		if err != nil {
+			log.Error("Save chunk err: ", err)
+		}
 
 		source.btswriter.Reset()
 		source.stat.resetAndNew()
